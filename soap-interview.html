@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOAP Note (Interview)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    .soap-app { max-width: 1600px; margin: 0 auto; padding: 1rem; height: 100%; display: flex; flex-direction: column; min-height: 0; box-sizing: border-box; }
+    .soap-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .soap-header-left { display: flex; align-items: center; gap: 0.5rem; }
+    .soap-header-center { text-align: center; }
+    .soap-header-center h1 { margin: 0; font-size: 1.35rem; font-weight: 700; }
+    .soap-header-center .step { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; }
+    .soap-header-right { display: flex; align-items: center; gap: 0.75rem; }
+    .soap-main { display: grid; grid-template-columns: 280px 1fr 320px; gap: 1rem; flex: 1; min-height: 0; }
+    @media (max-width: 1200px) { .soap-main { grid-template-columns: 1fr 1fr; } .soap-main .soap-right { grid-column: 1 / -1; } }
+    @media (max-width: 768px) { .soap-main { grid-template-columns: 1fr; } }
+    .soap-left .card { margin-bottom: 1rem; }
+    .soap-left .card-title { font-size: 0.7rem; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .soap-summary-header { background: var(--green); color: #fff; padding: 0.4rem 0.75rem; border-radius: var(--radius) var(--radius) 0 0; margin: -1rem -1.25rem 0.0rem -1.25rem; padding: 0.5rem 1rem; }
+    .soap-vital-row { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+    .soap-vital-row:last-child { border-bottom: none; }
+    .soap-vital-value.normal { color: var(--green); font-weight: 600; }
+    .soap-vital-value.warn { color: var(--amber); font-weight: 600; }
+    .soap-vital-value.high { color: var(--red); font-weight: 600; }
+    .soap-vital-value.na { color: var(--text-secondary); }
+    .soap-center { display: flex; flex-direction: column; min-height: 0; }
+    .soap-center .card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .soap-transcription-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .soap-transcription-header .card-title { margin: 0; }
+    .soap-chat { flex: 1; min-height: 0; background: rgba(0,0,0,0.2); border-radius: var(--radius); padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; align-items: flex-start; }
+    .soap-chat-bubble { max-width: 85%; margin-bottom: 0.75rem; padding: 0.6rem 1rem; border-radius: var(--radius); }
+    .soap-chat-bubble.nurse { background: var(--bg-card); border: 1px solid var(--border); align-self: flex-start; }
+    .soap-chat-bubble.patient { background: var(--grey-pill); margin-left: auto; }
+    .soap-chat-bubble-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem; }
+    .soap-recording-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; background: var(--bg-card); border-radius: var(--radius); margin-top: 0.75rem; border: 1px solid var(--border); }
+    .soap-recording-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; display: inline-block; margin-right: 0.5rem; animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .soap-recording-btns { display: flex; gap: 0.5rem; }
+    .soap-recording-btns button { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; }
+    .soap-recording-btns .btn-play { background: var(--green); color: #fff; }
+    .soap-recording-btns .btn-stop { background: var(--red); color: #fff; }
+    .soap-right .card { margin-bottom: 1rem; }
+    .soap-questions-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--blue); color: #fff; border-radius: 50%; font-size: 0.75rem; font-weight: 600; margin-left: 0.35rem; }
+    .soap-question-item { padding: 0.4rem 0; }
+    .soap-question-item.deleted { color: var(--text-secondary); text-decoration: line-through; font-size: 0.85rem; }
+    .soap-question-item .tag-new { font-size: 0.65rem; background: #6a4c93; color: #fff; padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.35rem; }
+    .soap-tabs { display: flex; gap: 0.25rem; margin-bottom: 0.75rem; }
+    .soap-tabs button { padding: 0.4rem 0.75rem; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .soap-tabs button.active { background: #6a4c93; color: #fff; border-color: #6a4c93; }
+    .soap-analysis-item { padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .soap-analysis-item:last-child { border-bottom: none; }
+    .soap-analysis-label { font-weight: 500; }
+    .soap-analysis-pct { font-size: 0.9rem; color: var(--text-secondary); }
+    .soap-analysis-bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 0.25rem; overflow: hidden; }
+    .soap-analysis-fill { height: 100%; border-radius: 3px; }
+    .btn-orange { background: var(--amber); color: #1a1d21; font-weight: 600; }
+    .soap-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--grey-pill); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div id="app" class="soap-app">
+    <header class="soap-header">
+      <div class="soap-header-left">
+        <a href="index.html" class="btn btn-secondary">&larr; Back</a>
+      </div>
+      <div class="soap-header-center">
+        <h1>SOAP Note (Interview)</h1>
+        <p class="step">Step 1/2</p>
+      </div>
+      <div class="soap-header-right">
+        <button type="button" class="btn btn-secondary">Next &rarr;</button>
+        <button type="button" class="btn btn-orange">Executive Summary</button>
+        <button type="button" class="btn btn-primary">Compare And Contrast</button>
+        <div class="soap-avatar">JS</div>
+      </div>
+    </header>
+
+    <main class="soap-main">
+      <aside class="soap-left">
+        <section class="card">
+          <div class="soap-summary-header card-title">SUMMARY</div>
+          <div class="card-body" id="soap-summary">—</div>
+        </section>
+        <section class="card">
+          <h2 class="card-title">PATIENT RECENT VITALS</h2>
+          <div class="card-body" id="soap-vitals">—</div>
+        </section>
+        <section class="card">
+          <h2 class="card-title">EXISTING CONDITIONS</h2>
+          <div class="card-body" id="soap-conditions">—</div>
+        </section>
+        <section class="card">
+          <h2 class="card-title">MEDICATIONS</h2>
+          <div class="card-body" id="soap-medications">—</div>
+        </section>
+        <section class="card">
+          <h2 class="card-title">ALLERGIES</h2>
+          <div class="card-body" id="soap-allergies">—</div>
+        </section>
+      </aside>
+
+      <section class="soap-center">
+        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+          <div class="soap-transcription-header">
+            <span class="card-title">Transcription</span>
+            <button type="button" id="soap-end-dialog" class="btn btn-primary" style="background: var(--green); border-color: var(--green);">End Dialog</button>
+          </div>
+          <div class="soap-chat" id="soap-chat">
+            <!-- Bubbles appended by transcription script -->
+          </div>
+          <div class="soap-recording-bar">
+            <span id="soap-recording-status"><span class="soap-recording-dot" id="soap-recording-dot" style="display: none;"></span> <span id="soap-recording-text">Click Start to begin recording</span></span>
+            <div class="soap-recording-btns">
+              <button type="button" id="soap-record-start" class="btn-play" title="Start" aria-label="Start">&#9654;</button>
+              <button type="button" id="soap-record-stop" class="btn-stop" title="Stop" aria-label="Stop" disabled>&#9632;</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="soap-right">
+        <section class="card">
+          <h2 class="card-title">QUESTIONS<span class="soap-questions-badge" id="soap-questions-badge">3</span></h2>
+          <div class="card-body" id="soap-questions-list">
+            <div class="soap-question-item"><span class="tag-new">NEW</span> Have you experienced chest pain or discomfort?</div>
+            <div class="soap-question-item"><span class="tag-new">NEW</span> How long have you noticed fatigue or discomfort?</div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="soap-tabs">
+            <button type="button" class="active">Differential Diagnosis</button>
+            <button type="button">Recommended Tests</button>
+          </div>
+          <div id="soap-differential" class="card-body"></div>
+          <div id="soap-recommended" class="card-body" style="display: none;"></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+  <script>
+    (function () {
+      var currentScoreboard = { recommendedTests: [], differentialDiagnoses: [] };
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+      function ageFromBirthDate(birthDate) {
+        if (!birthDate) return null;
+        var today = new Date();
+        var birth = new Date(birthDate);
+        var age = today.getFullYear() - birth.getFullYear();
+        var m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        return age;
+      }
+      function getDisplay(o) {
+        if (!o) return '';
+        if (typeof o === 'string') return o;
+        if (o.display) return o.display;
+        if (o.text) return o.text;
+        if (Array.isArray(o.coding) && o.coding[0]) return o.coding[0].display || o.coding[0].code || '';
+        return JSON.stringify(o);
+      }
+
+      function renderLeftColumn(bundle) {
+        var entries = bundle.entry || [];
+        var patient = entries.find(function (e) { return e.resource && e.resource.resourceType === 'Patient'; });
+        var conditions = entries.filter(function (e) { return e.resource && e.resource.resourceType === 'Condition'; });
+        var medications = entries.filter(function (e) { return e.resource && e.resource.resourceType === 'MedicationStatement'; });
+        var allergies = entries.filter(function (e) { return e.resource && e.resource.resourceType === 'AllergyIntolerance'; });
+        var observations = entries.filter(function (e) { return e.resource && e.resource.resourceType === 'Observation'; });
+        var encounter = entries.find(function (e) { return e.resource && e.resource.resourceType === 'Encounter'; });
+
+        var summaryEl = document.getElementById('soap-summary');
+        if (summaryEl) {
+          var name = '—';
+          var age = '';
+          if (patient && patient.resource) {
+            var p = patient.resource;
+            var n = p.name && p.name[0];
+            if (n) name = (n.family || '') + (n.given && n.given.length ? ', ' + n.given.join(' ') : '');
+            age = ageFromBirthDate(p.birthDate) != null ? 'Age ' + ageFromBirthDate(p.birthDate) : '';
+          }
+          var chief = '—';
+          if (encounter && encounter.resource && encounter.resource.reasonCode && encounter.resource.reasonCode[0]) {
+            var rc = encounter.resource.reasonCode[0];
+            chief = (rc.text || getDisplay(rc)) || chief;
+          }
+          summaryEl.innerHTML = '<p style="margin:0 0 0.25rem 0;">Patient: ' + escapeHtml(name) + (age ? ', ' + age : '') + '</p><p style="margin:0;color:var(--text-secondary);">Chief: ' + escapeHtml(chief) + '</p>';
+        }
+
+        var vitalsEl = document.getElementById('soap-vitals');
+        if (vitalsEl) {
+          var vitals = observations.filter(function (o) {
+            return o.resource.category && o.resource.category.some(function (c) {
+              return c.coding && c.coding.some(function (x) { return x.code === 'vital-signs'; });
+            });
+          });
+          var bp = vitals.find(function (o) {
+            return o.resource.code && o.resource.code.coding && o.resource.code.coding.some(function (x) { return x.code === '85354-9'; });
+          });
+          var weight = vitals.find(function (o) {
+            return o.resource.code && o.resource.code.coding && o.resource.code.coding.some(function (x) { return x.code === '29463-7'; });
+          });
+          var sys = bp && bp.resource.component ? bp.resource.component.find(function (c) { return c.code && c.code.coding && c.code.coding.some(function (x) { return x.code === '8480-6'; }); }) : null;
+          var dia = bp && bp.resource.component ? bp.resource.component.find(function (c) { return c.code && c.code.coding && c.code.coding.some(function (x) { return x.code === '8462-4'; }); }) : null;
+          var bpVal = (sys && sys.valueQuantity && dia && dia.valueQuantity) ? sys.valueQuantity.value + '/' + dia.valueQuantity.value + ' mmHg' : '—';
+          var weightVal = weight && weight.resource.valueQuantity ? weight.resource.valueQuantity.value + ' ' + (weight.resource.valueQuantity.unit || 'lb') : '—';
+          vitalsEl.innerHTML =
+            '<div class="soap-vital-row"><span>BP</span><span class="soap-vital-value ' + (bpVal !== '—' ? 'normal' : 'na') + '">' + escapeHtml(bpVal) + '</span></div>' +
+            '<div class="soap-vital-row"><span>HR</span><span class="soap-vital-value na">—</span></div>' +
+            '<div class="soap-vital-row"><span>Temp</span><span class="soap-vital-value na">—</span></div>' +
+            '<div class="soap-vital-row"><span>SpO2</span><span class="soap-vital-value na">—</span></div>' +
+            '<div class="soap-vital-row"><span>RR</span><span class="soap-vital-value na">—</span></div>' +
+            (weightVal !== '—' ? '<div class="soap-vital-row"><span>Weight</span><span class="soap-vital-value normal">' + escapeHtml(weightVal) + '</span></div>' : '');
+        }
+
+        var condEl = document.getElementById('soap-conditions');
+        if (condEl) {
+          if (conditions.length === 0) condEl.innerHTML = '<p style="margin:0;color:var(--text-secondary);">None documented</p>';
+          else condEl.innerHTML = '<ul style="margin:0;padding-left:1.25rem;">' + conditions.map(function (c) {
+            return '<li>' + escapeHtml((c.resource.code && c.resource.code.text) || getDisplay(c.resource.code) || '—') + '</li>';
+          }).join('') + '</ul>';
+        }
+
+        var medEl = document.getElementById('soap-medications');
+        if (medEl) {
+          if (medications.length === 0) medEl.innerHTML = '<p style="margin:0;color:var(--text-secondary);">None reported</p>';
+          else medEl.innerHTML = '<ul style="margin:0;padding-left:1.25rem;">' + medications.map(function (m) {
+            return '<li>' + escapeHtml((m.resource.medicationCodeableConcept && m.resource.medicationCodeableConcept.text) || getDisplay(m.resource.medicationCodeableConcept) || '—') + '</li>';
+          }).join('') + '</ul>';
+        }
+
+        var allEl = document.getElementById('soap-allergies');
+        if (allEl) {
+          if (allergies.length === 0) {
+            allEl.innerHTML = '<p style="margin:0 0 0.5rem 0;"><span class="pill pill-count">NONE ON RECORD</span></p><p style="margin:0;font-size:0.85rem;color:var(--text-secondary);">No known allergies documented.</p>';
+          } else {
+            allEl.innerHTML = '<ul style="margin:0;padding-left:1.25rem;">' + allergies.map(function (a) {
+              return '<li>' + escapeHtml((a.resource.code && a.resource.code.text) || getDisplay(a.resource.code) || '—') + '</li>';
+            }).join('') + '</ul>';
+          }
+        }
+      }
+
+      function renderRightColumn() {
+        var raw = sessionStorage.getItem('predictionsResult');
+        var differential = document.getElementById('soap-differential');
+        var recommended = document.getElementById('soap-recommended');
+        if (!differential) return;
+
+        var placeholders = [
+          { label: 'Congestive Heart Failure (CHF)', pct: 60, color: 'var(--red)' },
+          { label: 'Anemia', pct: 45, color: '#6a4c93' },
+          { label: 'Anemia', pct: 25, color: 'var(--blue)' },
+          { label: 'Diuretics effect', pct: 50, color: '#6a4c93' },
+          { label: 'Esophagitis', pct: 20, color: 'var(--amber)' }
+        ];
+        var recPlaceholders = [
+          { test: 'Complete Blood Count (CBC)', score: 100 },
+          { test: 'B-type Natriuretic Peptide (BNP)', score: 67 },
+          { test: 'Electrocardiogram (EKG)', score: 67 }
+        ];
+
+        try {
+          if (raw) {
+            var data = JSON.parse(raw);
+            currentScoreboard.recommendedTests = (data.recommendedTests || []).slice(0, 9);
+            currentScoreboard.differentialDiagnoses = (data.differentialDiagnoses || []).slice(0, 9);
+            if (data.differentialDiagnoses && data.differentialDiagnoses.length) {
+              differential.innerHTML = data.differentialDiagnoses.slice(0, 9).map(function (d) {
+                var pct = d.score != null ? d.score : 0;
+                return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(d.diagnosis) + '</span> <span class="soap-analysis-pct">' + pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + pct + '%;background:var(--red);"></div></div></div>';
+              }).join('');
+            } else differential.innerHTML = placeholders.map(function (p) {
+              return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(p.label) + '</span> <span class="soap-analysis-pct">' + p.pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + p.pct + '%;background:' + p.color + ';"></div></div></div>';
+            }).join('');
+            if (data.recommendedTests && data.recommendedTests.length && recommended) {
+              recommended.innerHTML = data.recommendedTests.slice(0, 9).map(function (t) {
+                var pct = t.score != null ? t.score : 0;
+                return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(t.test) + '</span> <span class="soap-analysis-pct">' + pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + pct + '%;background:var(--blue);"></div></div></div>';
+              }).join('');
+            } else if (recommended) {
+              recommended.innerHTML = recPlaceholders.map(function (p) {
+                return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(p.test) + '</span> <span class="soap-analysis-pct">' + p.score + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + p.score + '%;background:var(--blue);"></div></div></div>';
+              }).join('');
+            }
+          } else {
+            differential.innerHTML = placeholders.map(function (p) {
+              return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(p.label) + '</span> <span class="soap-analysis-pct">' + p.pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + p.pct + '%;background:' + p.color + ';"></div></div></div>';
+            }).join('');
+            if (recommended) recommended.innerHTML = recPlaceholders.map(function (p) {
+              return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(p.test) + '</span> <span class="soap-analysis-pct">' + p.score + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + p.score + '%;background:var(--blue);"></div></div></div>';
+            }).join('');
+          }
+        } catch (e) {
+          differential.innerHTML = placeholders.map(function (p) {
+            return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(p.label) + '</span> <span class="soap-analysis-pct">' + p.pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + p.pct + '%;background:' + p.color + ';"></div></div></div>';
+          }).join('');
+        }
+
+        var tabs = document.querySelectorAll('.soap-tabs button');
+        if (tabs.length >= 2) {
+          tabs[0].addEventListener('click', function () { tabs[0].classList.add('active'); tabs[1].classList.remove('active'); if (differential) differential.style.display = ''; if (recommended) recommended.style.display = 'none'; });
+          tabs[1].addEventListener('click', function () { tabs[1].classList.add('active'); tabs[0].classList.remove('active'); if (differential) differential.style.display = 'none'; if (recommended) recommended.style.display = 'block'; });
+        }
+      }
+
+      function getTranscriptText() {
+        var els = document.querySelectorAll('#soap-chat .soap-bubble-text');
+        var parts = [];
+        for (var i = 0; i < els.length; i++) {
+          var t = (els[i].textContent || '').trim();
+          if (t) parts.push(t);
+        }
+        return parts.join(' ');
+      }
+
+      function updateScoreboardFromAnalysis(newData) {
+        var differential = document.getElementById('soap-differential');
+        var recommended = document.getElementById('soap-recommended');
+        if (!newData || !differential) return;
+        var diff = (newData.differentialDiagnoses || []).slice(0, 9);
+        var rec = (newData.recommendedTests || []).slice(0, 9);
+        currentScoreboard.recommendedTests = rec;
+        currentScoreboard.differentialDiagnoses = diff;
+        try { sessionStorage.setItem('predictionsResult', JSON.stringify(currentScoreboard)); } catch (e) {}
+        differential.innerHTML = diff.map(function (d) {
+          var pct = d.score != null ? d.score : 0;
+          return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(d.diagnosis) + '</span> <span class="soap-analysis-pct">' + pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + pct + '%;background:var(--red);"></div></div></div>';
+        }).join('');
+        if (recommended) {
+          recommended.innerHTML = rec.map(function (t) {
+            var pct = t.score != null ? t.score : 0;
+            return '<div class="soap-analysis-item"><span class="soap-analysis-label">' + escapeHtml(t.test) + '</span> <span class="soap-analysis-pct">' + pct + '%</span><div class="soap-analysis-bar"><div class="soap-analysis-fill" style="width:' + pct + '%;background:var(--blue);"></div></div></div>';
+          }).join('');
+        }
+        var questionsList = document.getElementById('soap-questions-list');
+        var questionsBadge = document.getElementById('soap-questions-badge');
+        if (questionsList && Array.isArray(newData.followUpQuestions) && newData.followUpQuestions.length > 0) {
+          questionsList.innerHTML = newData.followUpQuestions.map(function (q) {
+            return '<div class="soap-question-item"><span class="tag-new">NEW</span> ' + escapeHtml(q) + '</div>';
+          }).join('');
+          if (questionsBadge) questionsBadge.textContent = String(newData.followUpQuestions.length);
+        }
+      }
+
+      function runTranscriptionAnalysis() {
+        var transcript = getTranscriptText();
+        if (!transcript || transcript.length < 10) return;
+        var origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+        fetch(origin + '/api/analyze-transcription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transcription: transcript,
+            currentRecommendedTests: currentScoreboard.recommendedTests,
+            currentDifferentialDiagnoses: currentScoreboard.differentialDiagnoses
+          })
+        }).then(function (res) { return res.ok ? res.json() : Promise.reject(new Error('Analysis failed')); })
+          .then(updateScoreboardFromAnalysis)
+          .catch(function () {});
+      }
+
+      fetch('medical_history.json')
+        .then(function (res) { return res.json(); })
+        .then(function (bundle) {
+          renderLeftColumn(bundle);
+          renderRightColumn();
+          setInterval(runTranscriptionAnalysis, 30000);
+        })
+        .catch(function () {
+          document.getElementById('soap-summary').textContent = 'Failed to load medical history.';
+        });
+    })();
+
+  // --- AssemblyAI live transcription ---
+  (function () {
+    var TARGET_SAMPLE_RATE = 16000;
+    var CHUNK_SAMPLES_16K = 1600; // 100ms at 16kHz
+    var chatEl = document.getElementById('soap-chat');
+    var statusText = document.getElementById('soap-recording-text');
+    var statusDot = document.getElementById('soap-recording-dot');
+    var btnStart = document.getElementById('soap-record-start');
+    var btnStop = document.getElementById('soap-record-stop');
+    var btnEndDialog = document.getElementById('soap-end-dialog');
+
+    var ws = null;
+    var mediaStream = null;
+    var audioContext = null;
+    var scriptNode = null;
+    var sourceNode = null;
+    var pcmBuffer = [];
+    var currentSpeaker = 'nurse';
+    var currentBubbleEl = null;
+    var silenceTimeoutId = null;
+    var inputSampleRate = 0;
+    var ratio = 0;
+
+    function showTranscriptError(msg) {
+      var p = document.createElement('p');
+      p.style.cssText = 'color: var(--red); margin: 0.5rem 0;';
+      p.textContent = msg;
+      chatEl.appendChild(p);
+      scrollChatToBottom();
+    }
+
+    function clearTranscriptErrors() {
+      [].slice.call(chatEl.querySelectorAll('p')).forEach(function (el) {
+        if (el.style && el.style.color === 'var(--red)') el.remove();
+      });
+    }
+
+    function scrollChatToBottom() {
+      if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function ensureCurrentBubble() {
+      if (currentBubbleEl) return currentBubbleEl;
+      var label = currentSpeaker === 'nurse' ? 'AI NURSE' : 'PATIENT';
+      var bubble = document.createElement('div');
+      bubble.className = 'soap-chat-bubble ' + currentSpeaker;
+      bubble.innerHTML = '<div class="soap-chat-bubble-label">' + label + '</div><div class="soap-bubble-text"></div>';
+      chatEl.appendChild(bubble);
+      currentBubbleEl = bubble;
+      scrollChatToBottom();
+      return bubble;
+    }
+
+    function setBubbleText(bubble, text) {
+      var textEl = bubble ? bubble.querySelector('.soap-bubble-text') : null;
+      if (textEl) textEl.textContent = text || '';
+      scrollChatToBottom();
+    }
+
+    function flipSpeaker() {
+      currentSpeaker = currentSpeaker === 'nurse' ? 'patient' : 'nurse';
+      currentBubbleEl = null;
+    }
+
+    function normalizeForCompare(s) {
+      return (s || '').toLowerCase().replace(/[.,?!;:'"]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function handleTurnMessage(msg) {
+      if (msg.type !== 'Turn' || !msg.transcript) return;
+      var bubble = ensureCurrentBubble();
+      var textEl = bubble.querySelector('.soap-bubble-text');
+      var currentText = (textEl && textEl.textContent) ? textEl.textContent.trim() : '';
+      var newTranscript = (msg.transcript || '').trim();
+      if (!newTranscript) return;
+      var curLower = currentText.toLowerCase();
+      var newLower = newTranscript.toLowerCase();
+      var curNorm = normalizeForCompare(currentText);
+      var newNorm = normalizeForCompare(newTranscript);
+      if (!curNorm || newLower.indexOf(curLower) === 0) {
+        setBubbleText(bubble, newTranscript);
+      } else if (newNorm.indexOf(curNorm) === 0 || curNorm.indexOf(newNorm) === 0) {
+        setBubbleText(bubble, newTranscript);
+      } else {
+        var words = currentText.split(/\s+/);
+        var foundSuffix = false;
+        for (var len = words.length; len >= 1; len--) {
+          var suffix = words.slice(-len).join(' ');
+          if (suffix && newLower.indexOf(suffix.toLowerCase()) === 0) {
+            var prefix = currentText.substring(0, currentText.length - suffix.length).trimEnd();
+            setBubbleText(bubble, prefix ? prefix + ' ' + newTranscript : newTranscript);
+            foundSuffix = true;
+            break;
+          }
+        }
+        if (!foundSuffix) {
+          setBubbleText(bubble, currentText + ' ' + newTranscript);
+        }
+      }
+      if (silenceTimeoutId) clearTimeout(silenceTimeoutId);
+      silenceTimeoutId = setTimeout(function () {
+        flipSpeaker();
+        silenceTimeoutId = null;
+      }, 3000);
+    }
+
+    function downsampleTo16k(float32, outLength) {
+      var out = new Int16Array(outLength);
+      var inLen = float32.length;
+      for (var i = 0; i < outLength; i++) {
+        var srcIdx = i * ratio;
+        var idx0 = Math.floor(srcIdx);
+        var idx1 = Math.min(idx0 + 1, inLen - 1);
+        var t = srcIdx - idx0;
+        var s = idx0 === idx1 ? float32[idx0] : float32[idx0] * (1 - t) + float32[idx1] * t;
+        var v = Math.max(-32768, Math.min(32767, Math.floor(s * 32768)));
+        out[i] = v;
+      }
+      return out;
+    }
+
+    function processAudio(e) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      var input = e.inputBuffer.getChannelData(0);
+      if (!inputSampleRate) return;
+      var outLen = Math.floor(input.length / ratio);
+      if (outLen <= 0) return;
+      var pcm = downsampleTo16k(input, outLen);
+      for (var i = 0; i < pcm.length; i++) pcmBuffer.push(pcm[i]);
+      while (pcmBuffer.length >= CHUNK_SAMPLES_16K) {
+        var chunk = new Int16Array(CHUNK_SAMPLES_16K);
+        for (var j = 0; j < CHUNK_SAMPLES_16K; j++) chunk[j] = pcmBuffer.shift();
+        try { ws.send(chunk.buffer); } catch (err) {}
+      }
+    }
+
+    function stopRecording() {
+      if (silenceTimeoutId) { clearTimeout(silenceTimeoutId); silenceTimeoutId = null; }
+      if (scriptNode) { try { scriptNode.disconnect(); } catch (e) {} scriptNode = null; }
+      if (sourceNode) { try { sourceNode.disconnect(); } catch (e) {} sourceNode = null; }
+      if (audioContext) { try { audioContext.close(); } catch (e) {} audioContext = null; }
+      if (mediaStream && mediaStream.getTracks) mediaStream.getTracks().forEach(function (t) { t.stop(); });
+      mediaStream = null;
+      pcmBuffer = [];
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try { ws.send(JSON.stringify({ type: 'Terminate' })); } catch (e) {}
+        ws.close();
+      }
+      ws = null;
+      if (btnStart) btnStart.disabled = false;
+      if (btnStop) btnStop.disabled = true;
+      if (statusText) statusText.textContent = 'Stopped';
+      if (statusDot) statusDot.style.display = 'none';
+    }
+
+    function startRecording() {
+      clearTranscriptErrors();
+      if (btnStart) btnStart.disabled = true;
+      if (statusText) statusText.textContent = 'Connecting…';
+      if (statusDot) statusDot.style.display = 'none';
+
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      var origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+      fetch(origin + '/api/streaming-token')
+        .then(function (res) {
+          if (!res.ok) return res.json().then(function (b) { throw new Error(b.error || 'Token failed'); });
+          return res.json();
+        })
+        .then(function (data) {
+          var token = data && data.token;
+          if (!token) throw new Error('No token received');
+          var url = 'wss://streaming.assemblyai.com/v3/ws?token=' + encodeURIComponent(token) +
+            '&sample_rate=16000&encoding=pcm_s16le&format_turns=true&min_end_of_turn_silence_when_confident=560';
+          ws = new WebSocket(url);
+          ws.binaryType = 'arraybuffer';
+          ws.onopen = function () {
+            if (statusText) statusText.textContent = 'Recording in progress';
+            if (statusDot) statusDot.style.display = 'inline-block';
+            if (btnStop) btnStop.disabled = false;
+            navigator.mediaDevices.getUserMedia({ audio: true })
+              .then(function (stream) {
+                mediaStream = stream;
+                inputSampleRate = audioContext.sampleRate;
+                ratio = inputSampleRate / TARGET_SAMPLE_RATE;
+                sourceNode = audioContext.createMediaStreamSource(stream);
+                scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
+                scriptNode.onaudioprocess = processAudio;
+                sourceNode.connect(scriptNode);
+                var silentGain = audioContext.createGain();
+                silentGain.gain.value = 0;
+                scriptNode.connect(silentGain);
+                silentGain.connect(audioContext.destination);
+              })
+              .catch(function (err) {
+                showTranscriptError('Microphone access denied or unavailable.');
+                stopRecording();
+              });
+          };
+          ws.onmessage = function (ev) {
+            if (typeof ev.data !== 'string') return;
+            try {
+              var msg = JSON.parse(ev.data);
+              if (msg.type === 'Turn') handleTurnMessage(msg);
+            } catch (e) {}
+          };
+          ws.onerror = function () {
+            showTranscriptError('Connection error.');
+          };
+          ws.onclose = function () {
+            stopRecording();
+          };
+        })
+        .catch(function (err) {
+          showTranscriptError(err.message || 'Failed to get streaming token. Set ASSEMBLYAI_API_KEY in .env.');
+          if (btnStart) btnStart.disabled = false;
+        });
+    }
+
+    if (btnStart) btnStart.addEventListener('click', function () { startRecording(); });
+    if (btnStop) btnStop.addEventListener('click', function () { stopRecording(); });
+    if (btnEndDialog) btnEndDialog.addEventListener('click', function () { stopRecording(); });
+  })();
+  </script>
+</body>
+</html>

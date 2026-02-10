@@ -1,0 +1,1 @@
+{"location":"server.js:dotenv","message":"env after load","data":{"cwd":"/Users/mahanawaz/Nurse AI Agent","dirname":"/Users/mahanawaz/Nurse AI Agent","dotenvError":null,"hasGEMINI_API_KEY":false,"hasGOOGLE_API_KEY":true,"hasANTHROPIC_API_KEY":true},"timestamp":1770709343955,"hypothesisId":"H1-H2"}

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Current Predictions – Diagnostic Analysis</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .predictions-header { margin-bottom: 1.5rem; }
+    .scoreboard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    @media (max-width: 900px) { .scoreboard-cards { grid-template-columns: 1fr; } }
+    .scoreboard-item { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .scoreboard-item:last-child { border-bottom: none; }
+    .scoreboard-item .item-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
+    .loading-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="dashboard-header predictions-header">
+      <div class="header-patient">
+        <h1>Diagnostic Analysis</h1>
+        <p class="patient-meta">Multi-Agent Medical Diagnostic System – Council of Experts</p>
+      </div>
+      <div class="header-actions">
+        <a href="soap-interview.html" class="btn btn-primary">Start Recording</a>
+        <a href="index.html" class="btn btn-secondary">Back to Medical History</a>
+      </div>
+    </header>
+
+    <div id="loading" class="card loading-state" style="display: none;">
+      Analyzing medical history… (Triage → Specialists → Consensus)
+    </div>
+    <div id="error" class="card" style="display: none;">
+      <p class="card-title" id="error-title">Error</p>
+      <p id="error-message"></p>
+      <p><a href="index.html" class="btn btn-secondary">Back to Medical History</a></p>
+    </div>
+    <div id="scoreboards" style="display: none;">
+      <div class="scoreboard-cards">
+        <section class="card">
+          <h2 class="card-title">Recommended Tests Scoreboard</h2>
+          <div id="recommended-tests" class="card-body"></div>
+        </section>
+        <section class="card">
+          <h2 class="card-title">Differential Diagnoses Scoreboard</h2>
+          <div id="differential-diagnoses" class="card-body"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('error');
+      const errorMsg = document.getElementById('error-message');
+      const scoreboardsEl = document.getElementById('scoreboards');
+      const testsEl = document.getElementById('recommended-tests');
+      const diagnosesEl = document.getElementById('differential-diagnoses');
+
+      function showLoading() {
+        loadingEl.style.display = 'block';
+        errorEl.style.display = 'none';
+        scoreboardsEl.style.display = 'none';
+      }
+      function showError(msg) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorMsg.textContent = msg;
+        scoreboardsEl.style.display = 'none';
+      }
+      function showScoreboards(data) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        scoreboardsEl.style.display = 'block';
+
+        testsEl.innerHTML = '';
+        (data.recommendedTests || []).slice(0, 9).forEach(function (item) {
+          const div = document.createElement('div');
+          div.className = 'scoreboard-item';
+          div.innerHTML =
+            '<strong>' + escapeHtml(item.test) + '</strong>' +
+            '<div class="item-row">' +
+              '<span class="pill pill-count">Score ' + item.score + '</span>' +
+              '<span class="pill pill-icd">Weight ' + item.weight + '/3</span>' +
+              '<span class="vital-label">Recommended by: ' + escapeHtml((item.recommendedBy || []).join(', ')) + '</span>' +
+            '</div>';
+          testsEl.appendChild(div);
+        });
+
+        diagnosesEl.innerHTML = '';
+        (data.differentialDiagnoses || []).slice(0, 9).forEach(function (item) {
+          const confClass = item.confidence === 'High' ? 'pill-active' : item.confidence === 'Moderate' ? 'pill-in-progress' : 'pill-count';
+          const div = document.createElement('div');
+          div.className = 'scoreboard-item';
+          div.innerHTML =
+            '<strong>' + escapeHtml(item.diagnosis) + '</strong>' +
+            '<div class="item-row">' +
+              '<span class="pill pill-count">Score ' + item.score + '</span>' +
+              '<span class="pill pill-icd">Weight ' + item.weight + '/3</span>' +
+              '<span class="pill ' + confClass + '">' + escapeHtml(item.confidence || '') + '</span>' +
+              '<span class="vital-label">Recommended by: ' + escapeHtml((item.recommendedBy || []).join(', ')) + '</span>' +
+            '</div>';
+          diagnosesEl.appendChild(div);
+        });
+      }
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function showNoResults() {
+        showError('No analysis results. Run analysis from the Medical History dashboard by clicking Current Predictions.');
+        var titleEl = document.getElementById('error-title');
+        if (titleEl) titleEl.textContent = 'No results';
+      }
+
+      (function onLoad() {
+        try {
+          var raw = sessionStorage.getItem('predictionsResult');
+          if (raw) {
+            var data = JSON.parse(raw);
+            if (data && data.recommendedTests && data.differentialDiagnoses) {
+              showScoreboards(data);
+              return;
+            }
+          }
+        } catch (e) {}
+        showNoResults();
+      })();
+    })();
+  </script>
+</body>
+</html>

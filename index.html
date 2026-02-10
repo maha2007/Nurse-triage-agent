@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Medical History</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="dashboard-header">
+      <div class="header-patient">
+        <h1 id="patient-name">—</h1>
+        <p class="patient-meta" id="patient-meta">—</p>
+      </div>
+      <div class="header-actions">
+        <div class="last-encounter" id="last-encounter">—</div>
+        <span id="predictions-status" style="display: none;" class="patient-meta"></span>
+        <div class="action-buttons">
+          <a href="soap-interview.html" class="btn btn-primary">Start Recording</a>
+          <a href="predictions.html" class="btn btn-primary" id="btn-predictions">Current Predictions</a>
+          <button type="button" class="btn btn-secondary" id="btn-expand-all" title="Expand all sections for printing">Expand all for print</button>
+          <button type="button" class="btn btn-secondary" onclick="window.print()">Export PDF</button>
+          <button type="button" class="btn btn-secondary" onclick="window.print()">Print</button>
+          <button type="button" class="btn btn-primary">New Encounter</button>
+        </div>
+      </div>
+    </header>
+    <main class="dashboard-main">
+      <div class="column col-1">
+        <section class="card" id="card-patient"></section>
+        <section class="card" id="card-emergency-contact"></section>
+        <section class="card" id="card-allergies"></section>
+      </div>
+      <div class="column col-2">
+        <section class="card" id="card-conditions"></section>
+        <section class="card" id="card-medications"></section>
+      </div>
+      <div class="column col-3">
+        <section class="card" id="card-vitals"></section>
+        <section class="card" id="card-labs"></section>
+        <section class="card" id="card-active"></section>
+      </div>
+    </main>
+    <div class="additional-row">
+      <section class="card" id="card-encounter"></section>
+      <section class="card" id="card-procedures"></section>
+      <section class="card" id="card-immunizations"></section>
+      <section class="card" id="card-family-history"></section>
+      <section class="card" id="card-documents"></section>
+    </div>
+    <footer class="dashboard-footer" id="bundle-footer"></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
